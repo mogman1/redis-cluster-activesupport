@@ -1,15 +1,57 @@
 # Redis::Activesupport::Cluster
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/redis/activesupport/cluster`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem is an extension to [redis-activesupport](https://github.com/redis-store/redis-activesupport) that adds support
+for a few features required to use `redis-store` with redis cluster. Right now there isn't an official redis cluster
+client in ruby, so it's become common to use a redis cluster proxy like [corvus](https://github.com/eleme/corvus). When
+switching there are a few things you can't do with redis cluster that you can do with a single redis server. Most of
+them revolve around issuing commands with multiple keys. In redis cluster, your keys are partitioned and live on
+different physical servers, operations like `KEYS` are not possible. Corvus will break apart `MSET` and `MGET` into
+individual `GET` and `SET` commands automatically, but in general, it's not a good idea to use them.
 
-TODO: Delete this and the text above, and describe your gem
+## Usage
+
+This gem is a small extension to `redis-activesupport`, so refer to their documentation for most configuration. Instead
+of specifying `:redis_store` you must now specify `:redis_cluster_store` to load this extension.
+
+```ruby
+module MyProject
+  class Application < Rails::Application
+    config.cache_store = :redis_cluster_store, options
+  end
+end
+```
+
+Additionally, there's a new configuration option: `:ignored_command_errors`. This is useful if you're using a redis
+cluster proxy like corvus who will raise a `Redis::CommandError` with a message indicating the cluster is offline or
+experiencing a partial outage. This extension allows you to whitelist certain `ignored_command_errors` that would
+normally be raised by `redis-activesupport`. By default this gem whitelists the following errors:
+
+```ruby
+DEFAULT_IGNORED_COMMAND_ERRORS = ["ERR Proxy error"]
+```
+
+If you need additional errors added to the whitelist, you can do this through your own configuration or open a pull
+request to add it to the default whitelist. NOTE: this list is turned into a `Set` to keep lookups fast, so feel free to
+make this list as big as you need. Example:
+
+```ruby
+module MyProject
+  class Application < Rails::Application
+    config.cache_store = :redis_cluster_store, {:ignored_command_errors => ["Uh oh", "Please, stop", "Fire emoji"]}
+  end
+end
+```
+
+With this change, your cache store will now silently fail once again so a redis cluster won't knock your rails apps
+offline.
+
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'redis-activesupport-cluster'
+gem "redis-activesupport-cluster"
 ```
 
 And then execute:
@@ -20,19 +62,9 @@ Or install it yourself as:
 
     $ gem install redis-activesupport-cluster
 
-## Usage
-
-TODO: Write usage instructions here
-
-## Development
-
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
-
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and tags, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/redis-activesupport-cluster.
+Bug reports and pull requests are welcome on GitHub at https://github.com/film42/redis-activesupport-cluster.
 
 ## License
 
