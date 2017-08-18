@@ -13,16 +13,20 @@ module ActiveSupport
         @ignored_command_errors = ::Set.new(@options.fetch(:ignored_command_errors, DEFAULT_IGNORED_COMMAND_ERRORS))
       end
 
-      def delete_matched(matcher, options = nil)
-        fail NotImplementedError, "Deleting keys with a matcher is not supported with redis cluster"
-      end
-
-      def write_entry(key, entry, options)
+      def delete_entry(key, options)
         super
       rescue Redis::CommandError => error
         raise unless ignored_command_errors.include?(error.message)
         raise if raise_errors?
         false
+      end
+
+      def delete_matched(matcher, options = nil)
+        fail ::NotImplementedError, "Deleting keys with a matcher is not supported with redis cluster"
+      end
+
+      def fetch_multi(*names)
+        fail ::NotImplementedError, "The default implementation uses MULTI which isn't supported. This can be changed to use MSET and work."
       end
 
       def read_entry(key, options)
@@ -33,7 +37,7 @@ module ActiveSupport
         nil
       end
 
-      def delete_entry(key, options)
+      def write_entry(key, entry, options)
         super
       rescue Redis::CommandError => error
         raise unless ignored_command_errors.include?(error.message)

@@ -11,6 +11,12 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
     end
   end
 
+  describe "#fetch_multi" do
+    it "is not supported with redis cluster" do
+      expect{ subject.fetch_multi(nil) }.to raise_error(::NotImplementedError)
+    end
+  end
+
   describe "#write_entry" do
     it "returns false when a known error is raised" do
       allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
