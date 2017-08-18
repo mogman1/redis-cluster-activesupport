@@ -7,8 +7,8 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Garrett Thornburg"]
   spec.email         = ["film42@gmail.com"]
 
-  spec.summary       = "Add support for catch redis cluster proxy errors"
-  spec.description   = "Add support for catch redis cluster proxy errors"
+  spec.summary       = "Extension to redis-activesupport for working with redis cluster"
+  spec.description   = "Extension to redis-activesupport for working with redis cluster"
   spec.homepage      = "https://github.com/film42/redis-cluster-activesupport"
   spec.license       = "MIT"
 
