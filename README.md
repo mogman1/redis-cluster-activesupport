@@ -1,4 +1,5 @@
-# Redis::Activesupport::Cluster
+Redis cluster stores for ActiveSupport
+======================================
 
 This gem is an extension to [redis-activesupport](https://github.com/redis-store/redis-activesupport) that adds support
 for a few features required to use `redis-store` with redis cluster. Right now there isn't an official redis cluster

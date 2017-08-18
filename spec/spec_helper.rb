@@ -1,6 +1,6 @@
 require "bundler/setup"
 require "pry"
-require "active_support/cache/redis_cluster_store"
+require "redis/cluster/activesupport"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
