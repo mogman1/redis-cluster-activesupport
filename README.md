@@ -52,7 +52,7 @@ offline.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem "redis-activesupport-cluster"
+gem "redis-cluster-activesupport"
 ```
 
 And then execute:
@@ -61,11 +61,11 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install redis-activesupport-cluster
+    $ gem install redis-cluster-activesupport
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/film42/redis-activesupport-cluster.
+Bug reports and pull requests are welcome on GitHub at https://github.com/film42/redis-cluster-activesupport.
 
 ## License
 
