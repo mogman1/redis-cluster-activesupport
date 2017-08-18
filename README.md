@@ -1,5 +1,4 @@
-Redis cluster stores for ActiveSupport
-======================================
+# Redis cluster stores for ActiveSupport [![Build Status](https://travis-ci.org/film42/redis-cluster-activesupport.svg?branch=master)](https://travis-ci.org/film42/redis-cluster-activesupport)
 
 This gem is an extension to [redis-activesupport](https://github.com/redis-store/redis-activesupport) that adds support
 for a few features required to use `redis-store` with redis cluster. Right now there isn't an official redis cluster
