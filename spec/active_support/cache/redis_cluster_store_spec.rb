@@ -17,6 +17,25 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
     end
   end
 
+  describe "#increment" do
+    let(:fake_client) { double(:expire => true, :incrby => true, :pipelined => true) }
+
+    before { allow(subject).to receive(:with).and_yield(fake_client) }
+
+    it "can increment without a ttl" do
+      expect(fake_client).to_not receive(:pipelined)
+      expect(fake_client).to receive(:incrby).with("testing", 1)
+      subject.increment("testing")
+    end
+
+    it "can increment with a ttl" do
+      expect(fake_client).to receive(:pipelined).and_yield
+      expect(fake_client).to receive(:incrby).with("testing", 1)
+      expect(fake_client).to receive(:expire).with("testing", 300)
+      subject.increment("testing", 1, :expires_in => 5.minutes)
+    end
+  end
+
   describe "#write_entry" do
     it "returns false when a known error is raised" do
       allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
