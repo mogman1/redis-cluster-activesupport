@@ -31,19 +31,19 @@ module ActiveSupport
 
       def increment(key, amount = 1, options = {})
         options = merged_options(options)
-        expires_in = options[:expires_in]
+        ttl = _expires_in(options)
         normalized_key = normalize_key(key, options)
         instrument(:increment, key, :amount => amount) do
-          with { |c|
-            if expires_in
+          with do |c|
+            if ttl
               c.pipelined do
                 c.incrby normalized_key, amount
-                c.expire normalized_key expires_in 
+                c.expire normalized_key, ttl
               end
             else
               c.incrby normalized_key, amount
             end
-          }
+          end
         end
       end
 
@@ -61,6 +61,15 @@ module ActiveSupport
         raise unless ignored_command_errors.include?(error.message)
         raise if raise_errors?
         false
+      end
+
+      private
+
+      def _expires_in(options)
+        if options
+          # Rack::Session           Merb                    Rails/Sinatra
+          options[:expire_after] || options[:expires_in] || options[:expire_in]
+        end
       end
     end
   end
