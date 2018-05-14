@@ -36,10 +36,11 @@ module ActiveSupport
         instrument(:increment, key, :amount => amount) do
           with do |c|
             if ttl
-              c.pipelined do
+              new_value, _ = c.pipelined do
                 c.incrby normalized_key, amount
                 c.expire normalized_key, ttl
               end
+              new_value
             else
               c.incrby normalized_key, amount
             end

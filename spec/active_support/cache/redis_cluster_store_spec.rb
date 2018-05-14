@@ -18,14 +18,17 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
   end
 
   describe "#increment" do
-    let(:fake_client) { double(:expire => true, :incrby => true, :pipelined => true) }
-
+    let(:fake_client) { Redis.new }
     before { allow(subject).to receive(:with).and_yield(fake_client) }
 
+    it "only returns the new value after being incremented with ttl" do
+      expect(subject.increment("testing", 1, :expires_in => 5.minutes)).to eq(1)
+      expect(subject.increment("testing", 5, :expires_in => 5.minutes)).to eq(6)
+    end
+
     it "can increment without a ttl" do
-      expect(fake_client).to_not receive(:pipelined)
-      expect(fake_client).to receive(:incrby).with("testing", 1)
-      subject.increment("testing")
+      expect(fake_client).to_not receive(:pipelined).and_call_original
+      expect(subject.increment("testing")).to eq(1)
     end
 
     it "can increment with a ttl" do
