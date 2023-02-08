@@ -1,3 +1,9 @@
+PATH
+  remote: ..
+  specs:
+    redis-cluster-activesupport (0.3.0)
+      activesupport (~> 6.0)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -52,10 +58,12 @@ PLATFORMS
 
 DEPENDENCIES
   activesupport (~> 6.1.0)
+  bundler
   fakeredis
   pry
   rake (~> 10.0)
+  redis-cluster-activesupport!
   rspec (~> 3.0)
 
 BUNDLED WITH
-   2.3.26
+   2.4.6
