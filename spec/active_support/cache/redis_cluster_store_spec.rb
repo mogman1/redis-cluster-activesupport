@@ -4,7 +4,7 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
   let(:options) { {} }
   let(:redis) { subject.redis }
 
-  subject { described_class.new(options) }
+  subject { described_class.new(*options) }
 
   describe "#delete_matched" do
     it "is not supported with redis cluster" do
