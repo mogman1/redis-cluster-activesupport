@@ -20,7 +20,7 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
 
   describe "#increment" do
     let(:fake_client) { Redis.new }
-    before { allow(subject).to receive(:with).and_yield(fake_client) }
+    before { allow(subject).to receive(:redis).and_return(fake_client) }
 
     it "only returns the new value after being incremented with ttl" do
       expect(subject.increment("testing", 1, :expires_in => 5.minutes)).to eq(1)

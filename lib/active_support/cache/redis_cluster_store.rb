@@ -16,7 +16,7 @@ module ActiveSupport
         ttl = _expires_in(options)
         normalized_key = normalize_key(key, options)
         instrument(:increment, key, :amount => amount) do
-          with do |c|
+          redis.with do |c|
             if ttl
               new_value, _ = c.pipelined do
                 c.incrby normalized_key, amount
