@@ -1,3 +1,5 @@
+require "active_support" # needed for rails 7.1
+require "active_support/core_ext/integer" # needed for rails 7.1
 require "bundler/setup"
 require "pry"
 require "redis/cluster/activesupport"
