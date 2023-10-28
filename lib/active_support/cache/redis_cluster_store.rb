@@ -1,3 +1,4 @@
+require "active_support/core_ext/hash" # needed for redis-activesupport in rails 7.1
 require "redis-activesupport"
 require "set"
 
@@ -13,8 +14,8 @@ module ActiveSupport
         @ignored_command_errors = ::Set.new(@options.fetch(:ignored_command_errors, DEFAULT_IGNORED_COMMAND_ERRORS))
       end
 
-      def delete_entry(key, options)
-        super
+      def delete_entry(key, options = {})
+        super(key, **options)
       rescue Redis::CommandError => error
         raise unless ignored_command_errors.include?(error.message)
         raise if raise_errors?
@@ -48,7 +49,8 @@ module ActiveSupport
         end
       end
 
-      def read_entry(key, options)
+      def read_entry(key, options = {})
+        ActiveSupport::Cache
         super
       rescue Redis::CommandError => error
         raise unless ignored_command_errors.include?(error.message)
@@ -56,7 +58,7 @@ module ActiveSupport
         nil
       end
 
-      def write_entry(key, entry, options)
+      def write_entry(key, entry, options = {})
         super
       rescue Redis::CommandError => error
         raise unless ignored_command_errors.include?(error.message)
