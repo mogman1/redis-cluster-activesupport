@@ -1,24 +1,13 @@
+require "active_support/core_ext/hash" # needed for redis-activesupport in rails 7.1
 require "redis-activesupport"
 require "set"
 
 module ActiveSupport
   module Cache
     class RedisClusterStore < RedisStore
-      attr_reader :ignored_command_errors
-
-      DEFAULT_IGNORED_COMMAND_ERRORS = ["ERR Proxy error"].freeze
-
-      def initialize(*)
-        super
-        @ignored_command_errors = ::Set.new(@options.fetch(:ignored_command_errors, DEFAULT_IGNORED_COMMAND_ERRORS))
-      end
-
-      def delete_entry(key, options)
-        super
-      rescue Redis::CommandError => error
-        raise unless ignored_command_errors.include?(error.message)
-        raise if raise_errors?
-        false
+      # method signature overridden slightly to support MRI >= 3.0 / JRuby >= 9.4 and Rails < 6.0
+      def delete_entry(key, options = {})
+        super(key, **options)
       end
 
       def delete_matched(matcher, options = nil)
@@ -34,34 +23,25 @@ module ActiveSupport
         ttl = _expires_in(options)
         normalized_key = normalize_key(key, options)
         instrument(:increment, key, :amount => amount) do
-          with do |c|
-            if ttl
-              new_value, _ = c.pipelined do
+          failsafe :increment do
+            with do |c|
+              if ttl
+                new_value, _ = c.pipelined do
+                  c.incrby normalized_key, amount
+                  c.expire normalized_key, ttl
+                end
+                new_value
+              else
                 c.incrby normalized_key, amount
-                c.expire normalized_key, ttl
               end
-              new_value
-            else
-              c.incrby normalized_key, amount
             end
           end
         end
       end
 
-      def read_entry(key, options)
+      # method signature overridden slightly to support MRI 3+ and Rails = 6.0
+      def read_entry(key, options = {})
         super
-      rescue Redis::CommandError => error
-        raise unless ignored_command_errors.include?(error.message)
-        raise if raise_errors?
-        nil
-      end
-
-      def write_entry(key, entry, options)
-        super
-      rescue Redis::CommandError => error
-        raise unless ignored_command_errors.include?(error.message)
-        raise if raise_errors?
-        false
       end
 
       private
@@ -71,6 +51,20 @@ module ActiveSupport
           # Rack::Session           Merb                    Rails/Sinatra
           options[:expire_after] || options[:expires_in] || options[:expire_in]
         end
+      end
+
+      # Overrides failsafe method in v5.3.0 of redis-activesupport to instead rescue from the broader BaseError all
+      # Redis errors inherit from.  This is in line with how Rails handles Redis failures in the implementation of their
+      # Redis cache.
+      # @see https://github.com/redis-store/redis-activesupport/blob/v5.3.0/lib/active_support/cache/redis_store.rb#L339-L345
+      # @see https://github.com/rails/rails/blob/v6.0.6.1/activesupport/lib/active_support/cache/redis_cache_store.rb#L477-L482
+      # @see https://github.com/redis/redis-rb/blob/v4.8.1/lib/redis/errors.rb#L4-L6
+      def failsafe(method, returning: nil)
+        yield
+      rescue ::Redis::BaseError => e
+        raise if raise_errors?
+        handle_exception(exception: e, method: method, returning: returning)
+        returning
       end
     end
   end

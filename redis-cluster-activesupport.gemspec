@@ -3,7 +3,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "redis-cluster-activesupport"
-  spec.version       = "0.3.0"
+  spec.version       = "0.4.0"
   spec.authors       = ["Garrett Thornburg"]
   spec.email         = ["film42@gmail.com"]
 
@@ -19,8 +19,9 @@ Gem::Specification.new do |spec|
   spec.executables   = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "redis-activesupport"
-  spec.add_development_dependency "bundler", "~> 1.15"
+  # 7.2 drops support for cache_format_version 6.1, test when 7.2 is released
+  spec.add_dependency "activesupport", ">= 4.2", "< 7.2"
+  spec.add_dependency "redis-activesupport", "~> 5.3"
   spec.add_development_dependency "fakeredis"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "rake", "~> 10.0"

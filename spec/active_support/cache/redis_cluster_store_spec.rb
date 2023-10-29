@@ -5,6 +5,40 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
 
   subject { described_class.new(options) }
 
+  describe "#delete" do
+    context "when error is raised" do
+      before { expect(subject).to receive(:with).and_raise(::Redis::CommandError, "upstream failure") }
+
+      it "still returns false" do
+        expect(subject.delete("test")).to eq(false)
+      end
+
+      context "raise_errors? is enabled" do
+        let(:options) { {:raise_errors => true} }
+
+        it "raises an error" do
+          expect { subject.delete("test") }.to raise_error(::Redis::CommandError, "upstream failure")
+        end
+      end
+
+      context "error_handler is set" do
+        let(:handler) { double("handler") }
+        let(:options) { { :error_handler => -> (exception:, method:, returning:) { handler.(exception, method, returning) } } }
+
+        it "calls error handler" do
+          expect(handler).to receive(:call) do |exception, method, returning|
+            expect(exception).to be_a(::Redis::CommandError)
+            expect(exception.message).to eq("upstream failure")
+            expect(method).to eq(:delete_entry)
+            expect(returning).to eq(false)
+          end
+
+          subject.delete("test")
+        end
+      end
+    end
+  end
+
   describe "#delete_matched" do
     it "is not supported with redis cluster" do
       expect{ subject.delete_matched(nil, nil) }.to raise_error(::NotImplementedError, "Deleting keys with a matcher is not supported with redis cluster")
@@ -39,92 +73,70 @@ describe ::ActiveSupport::Cache::RedisClusterStore do
     end
   end
 
-  describe "#write_entry" do
-    it "returns false when a known error is raised" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-      expect(subject.write("test", "yolo")).to eq(false)
+  describe "#read" do
+    context "when error is raised" do
+      before { expect(subject).to receive(:with).and_raise(::Redis::CommandError, "upstream failure") }
+
+      it "still returns nil" do
+        expect(subject.read("test")).to be_nil
+      end
+
+      context "raise_errors? is enabled" do
+        let(:options) { {:raise_errors => true} }
+
+        it "raises an error" do
+          expect { subject.read("test") }.to raise_error(::Redis::CommandError, "upstream failure")
+        end
+      end
+
+      context "error_handler is set" do
+        let(:handler) { double("handler") }
+        let(:options) { { :error_handler => -> (exception:, method:, returning:) { handler.(exception, method, returning) } } }
+
+        it "calls error handler" do
+          expect(handler).to receive(:call) do |exception, method, returning|
+            expect(exception).to be_a(::Redis::CommandError)
+            expect(exception.message).to eq("upstream failure")
+            expect(method).to eq(:read_entry)
+            expect(returning).to eq(nil)
+          end
+
+          subject.read("test")
+        end
+      end
     end
+  end
 
-    it "raises when an unknown command error occurs" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Yolo dude!")
-      expect { subject.write("test", "yolo") }.to raise_error("Yolo dude!")
-    end
+  describe "#write" do
+    context "when error is raised" do
+      before { expect(subject).to receive(:with).and_raise(::Redis::CommandError, "upstream failure") }
 
-    context "custom error" do
-      let(:options) { {:ignored_command_errors => ["Faked You Out"]} }
-
-      it "returns false when a known error is raised" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Faked You Out")
+      it "still returns false" do
         expect(subject.write("test", "yolo")).to eq(false)
       end
-    end
 
-    context "raise_errors? is enabled" do
-      let(:options) { {:raise_errors => true} }
+      context "raise_errors? is enabled" do
+        let(:options) { {:raise_errors => true} }
 
-      it "raises an error" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-        expect { subject.write("test", "yolo") }.to raise_error("ERR Proxy error")
+        it "raises an error" do
+          expect { subject.write("test", "yolo") }.to raise_error(::Redis::CommandError, "upstream failure")
+        end
       end
-    end
-  end
 
-  describe "#read_entry" do
-    it "returns false when a known error is raised" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-      expect(subject.read("test")).to eq(nil)
-    end
+      context "error_handler is set" do
+        let(:handler) { double("handler") }
+        let(:options) { { :error_handler => -> (exception:, method:, returning:) { handler.(exception, method, returning) } } }
 
-    it "raises when an unknown command error occurs" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Yolo dude!")
-      expect { subject.read("test") }.to raise_error("Yolo dude!")
-    end
+        it "calls error handler" do
+          expect(handler).to receive(:call) do |exception, method, returning|
+            expect(exception).to be_a(::Redis::CommandError)
+            expect(exception.message).to eq("upstream failure")
+            expect(method).to eq(:write_entry)
+            expect(returning).to eq(false)
+          end
 
-    context "custom error" do
-      let(:options) { {:ignored_command_errors => ["Faked You Out"]} }
-
-      it "returns false when a known error is raised" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Faked You Out")
-        expect(subject.read("test")).to eq(nil)
-      end
-    end
-
-    context "raise_errors? is enabled" do
-      let(:options) { {:raise_errors => true} }
-
-      it "raises an error" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-        expect { subject.read("test") }.to raise_error("ERR Proxy error")
-      end
-    end
-  end
-
-  describe "#delete_entry" do
-    it "returns false when a known error is raised" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-      expect(subject.delete("test")).to eq(false)
-    end
-
-    it "raises when an unknown command error occurs" do
-      allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Yolo dude!")
-      expect { subject.delete("test") }.to raise_error("Yolo dude!")
-    end
-
-    context "custom error" do
-      let(:options) { {:ignored_command_errors => ["Faked You Out"]} }
-
-      it "returns false when a known error is raised" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "Faked You Out")
-        expect(subject.delete("test")).to eq(false)
-      end
-    end
-
-    context "raise_errors? is enabled" do
-      let(:options) { {:raise_errors => true} }
-
-      it "raises an error" do
-        allow(subject).to receive(:with).and_raise(::Redis::CommandError, "ERR Proxy error")
-        expect { subject.delete("test") }.to raise_error("ERR Proxy error")
+          subject.write("test", "yolo")
+        end
       end
     end
   end
