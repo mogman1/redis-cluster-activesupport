@@ -21,30 +21,20 @@ module MyProject
 end
 ```
 
-Additionally, there's a new configuration option: `:ignored_command_errors`. This is useful if you're using a redis
-cluster proxy like corvus who will raise a `Redis::CommandError` with a message indicating the cluster is offline or
-experiencing a partial outage. This extension allows you to whitelist certain `ignored_command_errors` that would
-normally be raised by `redis-activesupport`. By default this gem whitelists the following errors:
-
-```ruby
-DEFAULT_IGNORED_COMMAND_ERRORS = ["ERR Proxy error"]
-```
-
-If you need additional errors added to the whitelist, you can do this through your own configuration or open a pull
-request to add it to the default whitelist. NOTE: this list is turned into a `Set` to keep lookups fast, so feel free to
-make this list as big as you need. Example:
+Beginning in v0.4.0, all `::Redis::BaseErrors` are automatically caught and ignored _unless_ the `:raise_errors` 
+configuration option is set. The `:ignored_command_errors` option no longer has any effect.  However, 
+`redis-activesupport`'s `:error_handler` option is now available.  This allows you to set an error handler function with
+a method signature of `(error:, method:, returning:)` where `error` is the error that was raised, `method` is the method
+where the error happened, and `returning` is the default value that's going to get returned.  You can then use this
+handler to still report the occurrence of the error, but without having your cache failure knock your app over.
 
 ```ruby
 module MyProject
   class Application < Rails::Application
-    config.cache_store = :redis_cluster_store, {:ignored_command_errors => ["Uh oh", "Please, stop", "Fire emoji"]}
+    config.cache_store = :redis_cluster_store, { :error_handler => -> (exception:, method:, returning:) { ::Rails.logger.warn("redis encountered `#{exception.class}: #{exception.message}` in #{method}, returned #{returning}")} }
   end
 end
 ```
-
-With this change, your cache store will now silently fail once again so a redis cluster won't knock your rails apps
-offline.
-
 
 ## Installation
 

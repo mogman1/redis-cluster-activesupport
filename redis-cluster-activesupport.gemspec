@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
 
   # 7.2 drops support for cache_format_version 6.1, test when 7.2 is released
   spec.add_dependency "activesupport", ">= 4.2", "< 7.2"
-  spec.add_dependency "redis-activesupport"
+  spec.add_dependency "redis-activesupport", "~> 5.3"
   spec.add_development_dependency "fakeredis"
   spec.add_development_dependency "pry"
   spec.add_development_dependency "rake", "~> 10.0"
